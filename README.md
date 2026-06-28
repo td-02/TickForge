@@ -12,6 +12,20 @@ This repository is intentionally structured for performance-oriented C++20 devel
 - Keep the repository suitable for a strong GitHub portfolio.
 - Leave room for future DPDK integration without forcing it into the first foundation pass.
 
+## Current Scope
+
+The repository currently contains the first-pass architecture skeleton and the early protocol, book, strategy, risk, and engine headers.
+
+- `include/tickforge/wire/frame.hpp` defines the 62-byte market and order wire frames.
+- `include/tickforge/book/order_book.hpp` provides a fixed-depth Level-2 book.
+- `include/tickforge/strategy/imbalance.hpp` contains the imbalance signal.
+- `include/tickforge/risk/guard.hpp` contains the pre-trade risk guard.
+- `include/tickforge/engine/trading_engine.hpp` ties the pipeline together.
+- `tests/test_book.cpp` exercises the core foundation path.
+- `apps/ring_scenarios.cpp` validates the ring-oriented scenarios.
+- `apps/ring_benchmark.cpp` provides a DPDK ring benchmark scaffold.
+- `apps/afpacket_engine.cpp` and `apps/afpacket_generator.cpp` scaffold AF_PACKET transport work.
+
 ## Target Environment
 
 - Windows 11
@@ -35,6 +49,12 @@ This repository is intentionally structured for performance-oriented C++20 devel
 - `results/` for benchmark output.
 - `docs/` for architecture notes and design decisions.
 
+## Apps
+
+- `ring_scenarios.cpp` checks the core engine behaviors across BUY, SELL, NO_SIGNAL, RISK_REJECT, and INVALID_FRAME paths.
+- `ring_benchmark.cpp` measures a million ring events and exports benchmark results to `results/ring_benchmark.csv`.
+- `afpacket_engine.cpp` and `afpacket_generator.cpp` establish the AF_PACKET transport scaffold for later DPDK integration.
+
 ## Build
 
 The current foundation provides an interface library for shared headers and a minimal test target.
@@ -45,6 +65,8 @@ cmake --build build
 ctest --test-dir build
 ```
 
+For DPDK-oriented apps, build and run only on a system with the DPDK headers and runtime available.
+
 ## Design Notes
 
 - The project is organized around explicit subsystems rather than one monolithic engine.
@@ -53,4 +75,4 @@ ctest --test-dir build
 
 ## Status
 
-This repository currently contains the project foundation only. Trading logic, strategy logic, and transport-specific implementations are intentionally deferred until the next confirmed step.
+This repository is still a foundation-first build. The code intentionally avoids trading logic depth so the architecture remains easy to extend and review in small steps.
