@@ -58,7 +58,7 @@ using OrderFrame = detail::OrderFrame;
 static_assert(sizeof(MarketFrame) == 62, "MarketFrame size validation failed.");
 static_assert(sizeof(OrderFrame) == 62, "OrderFrame size validation failed.");
 
-[[nodiscard]] constexpr const MarketFrame* decode_market(std::span<const std::byte, sizeof(MarketFrame)> bytes) noexcept
+[[nodiscard]] inline const MarketFrame* decode_market(std::span<const std::byte, sizeof(MarketFrame)> bytes) noexcept
 {
     // Zero-copy decode:
     // The protocol is intentionally represented as a packed POD so the caller can
@@ -70,7 +70,7 @@ static_assert(sizeof(OrderFrame) == 62, "OrderFrame size validation failed.");
     return reinterpret_cast<const MarketFrame*>(bytes.data());
 }
 
-[[nodiscard]] constexpr const MarketFrame* decode_market(const std::byte* bytes) noexcept
+[[nodiscard]] inline const MarketFrame* decode_market(const std::byte* bytes) noexcept
 {
     return reinterpret_cast<const MarketFrame*>(bytes);
 }
