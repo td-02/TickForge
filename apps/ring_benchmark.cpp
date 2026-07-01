@@ -1,9 +1,7 @@
 #include <algorithm>
-#include <array>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
-#include <string>
 #include <vector>
 
 #if defined(__has_include)
@@ -65,7 +63,7 @@ struct BenchmarkStats final
 int main()
 {
 #if !TICKFORGE_HAS_DPDK
-    std::cerr << "DPDK headers are not available; ring benchmark is disabled.\n";
+    std::cerr << "DPDK headers are not available; ring benchmark skipped.\n";
     return 0;
 #else
     constexpr std::size_t event_count = 1'000'000;

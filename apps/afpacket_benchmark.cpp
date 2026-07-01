@@ -106,14 +106,10 @@ int main(int argc, char** argv)
     const auto frame = make_market_frame(100U, 10U);
 
 #if !TICKFORGE_HAS_DPDK
-    std::vector<std::uint64_t> samples(message_count, 0U);
-    const BenchmarkResult result = compute_result(samples, 1.0);
-    const bool csv_ok = write_csv(result, "results/afpacket_benchmark.csv");
-    const bool report_ok = write_report(result, "results/afpacket_benchmark.md");
-
-    std::cout << "DPDK headers are not available; generated placeholder AF_PACKET benchmark outputs.\n";
+    (void)message_count;
+    std::cout << "DPDK headers are not available; AF_PACKET benchmark skipped.\n";
     std::cout << "MarketFrame ethertype: " << frame.ethertype << "\n";
-    return (csv_ok && report_ok) ? 0 : 1;
+    return 0;
 #else
     const char* eal_args[] = {argv[0], "-l", "0", "-n", "4"};
     if (rte_eal_init(4, const_cast<char**>(eal_args)) < 0)
