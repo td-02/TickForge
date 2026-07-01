@@ -9,6 +9,21 @@ project(TickForge
 include(CTest)
 
 option(TICKFORGE_ENABLE_WARNINGS "Enable a strong warning set for TickForge targets" ON)
+option(TICKFORGE_ENABLE_DPDK "Enable DPDK detection for transport-oriented apps" ON)
+
+set(TICKFORGE_DPDK_ENABLED OFF)
+if (TICKFORGE_ENABLE_DPDK)
+    include(CheckIncludeFileCXX)
+    check_include_file_cxx("rte_eal.h" TICKFORGE_HAS_RTE_EAL_H)
+    check_include_file_cxx("rte_ring.h" TICKFORGE_HAS_RTE_RING_H)
+    check_include_file_cxx("rte_ethdev.h" TICKFORGE_HAS_RTE_ETHDEV_H)
+
+    if (TICKFORGE_HAS_RTE_EAL_H AND TICKFORGE_HAS_RTE_RING_H AND TICKFORGE_HAS_RTE_ETHDEV_H)
+        set(TICKFORGE_DPDK_ENABLED ON)
+    endif()
+endif()
+
+message(STATUS "TickForge DPDK support: ${TICKFORGE_DPDK_ENABLED}")
 
 add_library(tickforge_core INTERFACE)
 add_library(tickforge::core ALIAS tickforge_core)
