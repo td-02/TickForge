@@ -1,0 +1,5 @@
+metric,value
+p50_cycles,0
+p95_cycles,0
+p99_cycles,0
+throughput_mpps,1

@@ -65,7 +65,7 @@ struct ScenarioResult final
 
     {
         engine::TradingEngine engine{book::OrderBook{}, risk::RiskGuard{{1000, 100000U}}};
-        const auto output = engine.on_market(make_market_frame(0U, 100U, 10U));
+        const auto output = engine.on_market(make_market_frame(0U, 100U, 0U));
         result.no_signal = !output.has_value();
     }
 
