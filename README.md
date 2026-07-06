@@ -1,6 +1,6 @@
-# TickForge
+# DPDKTrade
 
-TickForge is a foundation for a low-latency market data processing and order execution engine.
+DPDKTrade is a foundation for a low-latency market data processing and order execution engine built around DPDK-oriented transport paths.
 
 This repository is intentionally structured for performance-oriented C++20 development and a clean open-source presentation. It is designed to evolve toward a modern trading systems architecture without introducing unnecessary runtime overhead in the core path.
 
@@ -16,15 +16,16 @@ This repository is intentionally structured for performance-oriented C++20 devel
 
 The repository currently contains the first-pass architecture skeleton and the early protocol, book, strategy, risk, and engine headers.
 
-- `include/tickforge/wire/frame.hpp` defines the 62-byte market and order wire frames.
-- `include/tickforge/book/order_book.hpp` provides a fixed-depth Level-2 book.
-- `include/tickforge/strategy/imbalance.hpp` contains the imbalance signal.
-- `include/tickforge/risk/guard.hpp` contains the pre-trade risk guard.
-- `include/tickforge/engine/trading_engine.hpp` ties the pipeline together.
+- `include/dpdktrade/wire/frame.hpp` defines the 62-byte market and order wire frames.
+- `include/dpdktrade/book/order_book.hpp` provides a fixed-depth Level-2 book.
+- `include/dpdktrade/strategy/imbalance.hpp` contains the imbalance signal.
+- `include/dpdktrade/risk/guard.hpp` contains the pre-trade risk guard.
+- `include/dpdktrade/engine/dpdktrade_engine.hpp` ties the pipeline together.
 - `tests/test_book.cpp` exercises the core foundation path.
 - `apps/ring_scenarios.cpp` validates the ring-oriented scenarios.
 - `apps/ring_benchmark.cpp` provides a DPDK ring benchmark scaffold.
 - `apps/afpacket_engine.cpp` and `apps/afpacket_generator.cpp` scaffold AF_PACKET transport work.
+- `apps/stress.cpp` runs a long-form engine, ring, and AF_PACKET stress pass.
 
 ## Target Environment
 
@@ -37,12 +38,12 @@ The repository currently contains the first-pass architecture skeleton and the e
 
 ## Repository Layout
 
-- `include/tickforge/wire/` for wire formats and protocol utilities.
-- `include/tickforge/book/` for order book infrastructure.
-- `include/tickforge/strategy/` for signal generation.
-- `include/tickforge/risk/` for pre-trade checks.
-- `include/tickforge/engine/` for orchestration.
-- `include/tickforge/dpdk/` for future DPDK-specific integration.
+- `include/dpdktrade/wire/` for wire formats and protocol utilities.
+- `include/dpdktrade/book/` for order book infrastructure.
+- `include/dpdktrade/strategy/` for signal generation.
+- `include/dpdktrade/risk/` for pre-trade checks.
+- `include/dpdktrade/engine/` for orchestration and execution flow.
+- `include/dpdktrade/dpdk/` for future DPDK-specific integration.
 - `apps/` for runnable experiments and benchmarks.
 - `tests/` for unit and integration tests.
 - `scripts/` for developer tooling.
@@ -63,6 +64,7 @@ The current foundation provides an interface library for shared headers and a mi
 cmake -S . -B build -G Ninja
 cmake --build build
 ctest --test-dir build
+build/dpdktrade_stress
 ```
 
 For DPDK-oriented apps, build and run only on a system with the DPDK headers and runtime available.

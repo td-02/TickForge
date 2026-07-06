@@ -8,12 +8,12 @@
 #    if __has_include(<rte_cycles.h>) && __has_include(<rte_ring.h>)
 #        include <rte_cycles.h>
 #        include <rte_ring.h>
-#        define TICKFORGE_HAS_DPDK 1
+#        define DPDKTRADE_HAS_DPDK 1
 #    endif
 #endif
 
-#ifndef TICKFORGE_HAS_DPDK
-#    define TICKFORGE_HAS_DPDK 0
+#ifndef DPDKTRADE_HAS_DPDK
+#    define DPDKTRADE_HAS_DPDK 0
 #endif
 
 namespace
@@ -62,7 +62,7 @@ struct BenchmarkStats final
 
 int main()
 {
-#if !TICKFORGE_HAS_DPDK
+#if !DPDKTRADE_HAS_DPDK
     std::cerr << "DPDK headers are not available; ring benchmark skipped.\n";
     return 0;
 #else
@@ -70,7 +70,7 @@ int main()
     std::vector<std::uint64_t> samples;
     samples.reserve(event_count);
 
-    rte_ring* ring = rte_ring_create("tickforge_benchmark_ring", 1024, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
+    rte_ring* ring = rte_ring_create("dpdktrade_benchmark_ring", 1024, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
     if (ring == nullptr)
     {
         std::cerr << "Failed to create rte_ring.\n";

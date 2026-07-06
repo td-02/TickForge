@@ -2,9 +2,9 @@
 
 #include <cstdint>
 
-#include <tickforge/book/order_book.hpp>
+#include <dpdktrade/book/order_book.hpp>
 
-namespace tickforge::strategy
+namespace dpdktrade::strategy
 {
 enum class Signal : std::uint8_t
 {
@@ -44,4 +44,4 @@ enum class Signal : std::uint8_t
 
     return Signal::NO_SIGNAL;
 }
-} // namespace tickforge::strategy
+} // namespace dpdktrade::strategy

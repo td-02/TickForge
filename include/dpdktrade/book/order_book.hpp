@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace tickforge::book
+namespace dpdktrade::book
 {
 class OrderBook final
 {
@@ -119,4 +119,4 @@ private:
         return best;
     }
 };
-} // namespace tickforge::book
+} // namespace dpdktrade::book

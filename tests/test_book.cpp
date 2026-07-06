@@ -2,15 +2,15 @@
 #include <cstddef>
 #include <cstdint>
 
-#include <tickforge/book/order_book.hpp>
-#include <tickforge/engine/trading_engine.hpp>
-#include <tickforge/risk/guard.hpp>
-#include <tickforge/strategy/imbalance.hpp>
-#include <tickforge/wire/frame.hpp>
+#include <dpdktrade/book/order_book.hpp>
+#include <dpdktrade/engine/dpdktrade_engine.hpp>
+#include <dpdktrade/risk/guard.hpp>
+#include <dpdktrade/strategy/imbalance.hpp>
+#include <dpdktrade/wire/frame.hpp>
 
 int main()
 {
-    using namespace tickforge;
+    using namespace dpdktrade;
 
     static_assert(sizeof(wire::MarketFrame) == 62);
     static_assert(sizeof(wire::OrderFrame) == 62);
@@ -66,7 +66,7 @@ int main()
     assert(risk_guard.position() == 100);
     assert(risk_guard.notional() == 1000U);
 
-    engine::TradingEngine engine{book::OrderBook{}, risk::RiskGuard{{1000, 100000U}}};
+    engine::DpdkTradeEngine engine{book::OrderBook{}, risk::RiskGuard{{1000, 100000U}}};
 
     wire::MarketFrame engine_market{};
     engine_market.ethertype = wire::ETHERTYPE_MARKET;

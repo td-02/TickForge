@@ -7,19 +7,19 @@
 #include <string>
 #include <vector>
 
-#include <tickforge/wire/frame.hpp>
+#include <dpdktrade/wire/frame.hpp>
 
 #if defined(__has_include)
 #    if __has_include(<rte_cycles.h>) && __has_include(<rte_eal.h>) && __has_include(<rte_ethdev.h>)
 #        include <rte_cycles.h>
 #        include <rte_eal.h>
 #        include <rte_ethdev.h>
-#        define TICKFORGE_HAS_DPDK 1
+#        define DPDKTRADE_HAS_DPDK 1
 #    endif
 #endif
 
-#ifndef TICKFORGE_HAS_DPDK
-#    define TICKFORGE_HAS_DPDK 0
+#ifndef DPDKTRADE_HAS_DPDK
+#    define DPDKTRADE_HAS_DPDK 0
 #endif
 
 namespace
@@ -32,10 +32,10 @@ struct BenchmarkResult final
     double throughput_mpps = 0.0;
 };
 
-[[nodiscard]] constexpr tickforge::wire::MarketFrame make_market_frame(std::uint64_t price, std::uint64_t quantity) noexcept
+[[nodiscard]] constexpr dpdktrade::wire::MarketFrame make_market_frame(std::uint64_t price, std::uint64_t quantity) noexcept
 {
-    tickforge::wire::MarketFrame frame{};
-    frame.ethertype = tickforge::wire::ETHERTYPE_MARKET;
+    dpdktrade::wire::MarketFrame frame{};
+    frame.ethertype = dpdktrade::wire::ETHERTYPE_MARKET;
     frame.payload[0] = 0U;
 
     for (std::size_t index = 0; index < sizeof(std::uint64_t); ++index)
@@ -88,7 +88,7 @@ struct BenchmarkResult final
         return false;
     }
 
-    out << "# TickForge AF_PACKET Benchmark Report\n\n";
+    out << "# Trading Engine AF_PACKET Benchmark Report\n\n";
     out << "- p50 cycles: " << result.p50_cycles << "\n";
     out << "- p95 cycles: " << result.p95_cycles << "\n";
     out << "- p99 cycles: " << result.p99_cycles << "\n";
@@ -105,7 +105,7 @@ int main(int argc, char** argv)
     constexpr std::size_t message_count = 1'000'000;
     const auto frame = make_market_frame(100U, 10U);
 
-#if !TICKFORGE_HAS_DPDK
+#if !DPDKTRADE_HAS_DPDK
     (void)message_count;
     std::cout << "DPDK headers are not available; AF_PACKET benchmark skipped.\n";
     std::cout << "MarketFrame ethertype: " << frame.ethertype << "\n";
@@ -121,7 +121,7 @@ int main(int argc, char** argv)
     std::vector<std::uint64_t> samples;
     samples.reserve(message_count);
 
-    rte_ring* ring = rte_ring_create("tickforge_afpacket_benchmark", 4096, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
+    rte_ring* ring = rte_ring_create("dpdktrade_afpacket_benchmark", 4096, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
     if (ring == nullptr)
     {
         std::cerr << "Failed to create DPDK ring.\n";
@@ -132,7 +132,7 @@ int main(int argc, char** argv)
     for (std::size_t index = 0; index < message_count; ++index)
     {
         const std::uint64_t before = rte_rdtsc();
-        void* payload = const_cast<tickforge::wire::MarketFrame*>(reinterpret_cast<const tickforge::wire::MarketFrame*>(&frame));
+        void* payload = const_cast<dpdktrade::wire::MarketFrame*>(reinterpret_cast<const dpdktrade::wire::MarketFrame*>(&frame));
         rte_ring_enqueue(ring, payload);
         void* received = nullptr;
         rte_ring_dequeue(ring, &received);

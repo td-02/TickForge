@@ -3,27 +3,27 @@
 #include <cstdint>
 #include <iostream>
 
-#include <tickforge/book/order_book.hpp>
-#include <tickforge/engine/trading_engine.hpp>
-#include <tickforge/risk/guard.hpp>
-#include <tickforge/strategy/imbalance.hpp>
-#include <tickforge/wire/frame.hpp>
+#include <dpdktrade/book/order_book.hpp>
+#include <dpdktrade/engine/dpdktrade_engine.hpp>
+#include <dpdktrade/risk/guard.hpp>
+#include <dpdktrade/strategy/imbalance.hpp>
+#include <dpdktrade/wire/frame.hpp>
 
 #if defined(__has_include)
 #    if __has_include(<rte_ring.h>) && __has_include(<rte_malloc.h>)
 #        include <rte_ring.h>
 #        include <rte_malloc.h>
-#        define TICKFORGE_HAS_DPDK 1
+#        define DPDKTRADE_HAS_DPDK 1
 #    endif
 #endif
 
-#ifndef TICKFORGE_HAS_DPDK
-#    define TICKFORGE_HAS_DPDK 0
+#ifndef DPDKTRADE_HAS_DPDK
+#    define DPDKTRADE_HAS_DPDK 0
 #endif
 
 namespace
 {
-using namespace tickforge;
+using namespace dpdktrade;
 
 struct ScenarioResult final
 {
@@ -52,31 +52,31 @@ struct ScenarioResult final
     ScenarioResult result{};
 
     {
-        engine::TradingEngine engine{book::OrderBook{}, risk::RiskGuard{{1000, 100000U}}};
+        engine::DpdkTradeEngine engine{book::OrderBook{}, risk::RiskGuard{{1000, 100000U}}};
         const auto output = engine.on_market(make_market_frame(0U, 100U, 220U));
         result.buy = output.has_value();
     }
 
     {
-        engine::TradingEngine engine{book::OrderBook{}, risk::RiskGuard{{1000, 100000U}}};
+        engine::DpdkTradeEngine engine{book::OrderBook{}, risk::RiskGuard{{1000, 100000U}}};
         const auto output = engine.on_market(make_market_frame(1U, 100U, 220U));
         result.sell = output.has_value();
     }
 
     {
-        engine::TradingEngine engine{book::OrderBook{}, risk::RiskGuard{{1000, 100000U}}};
+        engine::DpdkTradeEngine engine{book::OrderBook{}, risk::RiskGuard{{1000, 100000U}}};
         const auto output = engine.on_market(make_market_frame(0U, 100U, 0U));
         result.no_signal = !output.has_value();
     }
 
     {
-        engine::TradingEngine engine{book::OrderBook{}, risk::RiskGuard{{1, 1U}}};
+        engine::DpdkTradeEngine engine{book::OrderBook{}, risk::RiskGuard{{1, 1U}}};
         const auto output = engine.on_market(make_market_frame(0U, 100U, 220U));
         result.risk_reject = !output.has_value();
     }
 
     {
-        engine::TradingEngine engine{book::OrderBook{}, risk::RiskGuard{{1000, 100000U}}};
+        engine::DpdkTradeEngine engine{book::OrderBook{}, risk::RiskGuard{{1000, 100000U}}};
         wire::MarketFrame invalid{};
         invalid.ethertype = 0xFFFFU;
         const auto output = engine.on_market(invalid);
@@ -86,7 +86,7 @@ struct ScenarioResult final
     return result;
 }
 
-#if TICKFORGE_HAS_DPDK
+#if DPDKTRADE_HAS_DPDK
 [[nodiscard]] rte_ring* create_ring(const char* name) noexcept
 {
     constexpr unsigned capacity = 1024;
@@ -106,8 +106,8 @@ int main()
     std::cout << "RISK_REJECT: " << (result.risk_reject ? "PASS" : "FAIL") << '\n';
     std::cout << "INVALID_FRAME: " << (result.invalid_frame ? "PASS" : "FAIL") << '\n';
 
-#if TICKFORGE_HAS_DPDK
-    if (rte_ring* ring = create_ring("tickforge_ring_validation"); ring != nullptr)
+#if DPDKTRADE_HAS_DPDK
+    if (rte_ring* ring = create_ring("dpdktrade_ring_validation"); ring != nullptr)
     {
         rte_ring_free(ring);
     }
