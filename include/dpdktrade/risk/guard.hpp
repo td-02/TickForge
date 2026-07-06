@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace tickforge::risk
+namespace dpdktrade::risk
 {
 class RiskGuard final
 {
@@ -70,4 +70,4 @@ private:
         return quantity < 0 ? static_cast<std::uint64_t>(-quantity) : static_cast<std::uint64_t>(quantity);
     }
 };
-} // namespace tickforge::risk
+} // namespace dpdktrade::risk

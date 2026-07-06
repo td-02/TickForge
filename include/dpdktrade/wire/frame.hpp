@@ -7,7 +7,7 @@
 #include <span>
 #include <type_traits>
 
-namespace tickforge::wire
+namespace dpdktrade::wire
 {
 inline constexpr std::uint16_t ETHERTYPE_MARKET = 0xF001U;
 inline constexpr std::uint16_t ETHERTYPE_ORDER = 0xF002U;
@@ -82,4 +82,4 @@ static_assert(sizeof(OrderFrame) == 62, "OrderFrame size validation failed.");
     // keeps the function free of heap allocation, exceptions, and dynamic growth.
     return std::bit_cast<std::array<std::byte, sizeof(OrderFrame)>>(frame);
 }
-} // namespace tickforge::wire
+} // namespace dpdktrade::wire

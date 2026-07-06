@@ -6,17 +6,17 @@
 #        include <rte_eal.h>
 #        include <rte_ethdev.h>
 #        include <rte_malloc.h>
-#        define TICKFORGE_HAS_DPDK 1
+#        define DPDKTRADE_HAS_DPDK 1
 #    endif
 #endif
 
-#ifndef TICKFORGE_HAS_DPDK
-#    define TICKFORGE_HAS_DPDK 0
+#ifndef DPDKTRADE_HAS_DPDK
+#    define DPDKTRADE_HAS_DPDK 0
 #endif
 
 int main(int argc, char** argv)
 {
-#if !TICKFORGE_HAS_DPDK
+#if !DPDKTRADE_HAS_DPDK
     (void)argc;
     (void)argv;
     std::cerr << "DPDK headers are not available; AF_PACKET engine is disabled.\n";
@@ -30,7 +30,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    std::cout << "TickForge AF_PACKET engine initialized.\n";
+    std::cout << "Trading Engine AF_PACKET engine initialized.\n";
     std::cout << "Attach a Linux veth pair through the AF_PACKET PMD and forward MarketFrame traffic here.\n";
     std::cout << "OrderFrame responses should be emitted on the paired TX path.\n";
 

@@ -5,14 +5,14 @@
 #include <cstdint>
 #include <optional>
 
-#include <tickforge/book/order_book.hpp>
-#include <tickforge/risk/guard.hpp>
-#include <tickforge/strategy/imbalance.hpp>
-#include <tickforge/wire/frame.hpp>
+#include <dpdktrade/book/order_book.hpp>
+#include <dpdktrade/risk/guard.hpp>
+#include <dpdktrade/strategy/imbalance.hpp>
+#include <dpdktrade/wire/frame.hpp>
 
-namespace tickforge::engine
+namespace dpdktrade::engine
 {
-class TradingEngine final
+class DpdkTradeEngine final
 {
 public:
     struct Statistics final
@@ -25,7 +25,7 @@ public:
         std::uint64_t invalid = 0;
     };
 
-    constexpr TradingEngine(book::OrderBook order_book, risk::RiskGuard risk_guard) noexcept
+    constexpr DpdkTradeEngine(book::OrderBook order_book, risk::RiskGuard risk_guard) noexcept
         : order_book_{order_book}
         , risk_guard_{risk_guard}
     {
@@ -123,4 +123,4 @@ private:
         }
     }
 };
-} // namespace tickforge::engine
+} // namespace dpdktrade::engine
