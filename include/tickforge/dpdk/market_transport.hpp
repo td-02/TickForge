@@ -26,6 +26,8 @@ struct MarketTransport final
 #if TICKFORGE_WITH_DPDK_HEADERS
     rte_ring* ring = nullptr;
     rte_mempool* pool = nullptr;
+    bool owns_ring = false;
+    bool owns_pool = false;
 #else
     void* ring = nullptr;
     void* pool = nullptr;
@@ -55,28 +57,44 @@ struct MarketTransport final
 #if TICKFORGE_WITH_DPDK_HEADERS
 [[nodiscard]] inline bool initialize_transport(MarketTransport& transport, const char* ring_name, const char* pool_name, unsigned capacity = 4096U) noexcept
 {
-    rte_mempool* pool = rte_mempool_create(
-        pool_name,
-        capacity,
-        sizeof(dpdktrade::wire::MarketFrame),
-        0U,
-        0U,
-        nullptr,
-        nullptr,
-        nullptr,
-        nullptr,
-        rte_socket_id(),
-        0U);
+    rte_mempool* pool = rte_mempool_lookup(pool_name);
     if (pool == nullptr)
     {
-        return false;
+        pool = rte_mempool_create(
+            pool_name,
+            capacity,
+            sizeof(dpdktrade::wire::MarketFrame),
+            0U,
+            0U,
+            nullptr,
+            nullptr,
+            nullptr,
+            nullptr,
+            rte_socket_id(),
+            0U);
+        if (pool == nullptr)
+        {
+            return false;
+        }
+
+        transport.owns_pool = true;
     }
 
-    rte_ring* ring = rte_ring_create(ring_name, capacity, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
+    rte_ring* ring = rte_ring_lookup(ring_name);
     if (ring == nullptr)
     {
-        rte_mempool_free(pool);
-        return false;
+        ring = rte_ring_create(ring_name, capacity, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
+        if (ring == nullptr)
+        {
+            if (transport.owns_pool)
+            {
+                rte_mempool_free(pool);
+            }
+            transport.owns_pool = false;
+            return false;
+        }
+
+        transport.owns_ring = true;
     }
 
     transport.ring = ring;
@@ -88,14 +106,22 @@ inline void shutdown_transport(MarketTransport& transport) noexcept
 {
     if (transport.ring != nullptr)
     {
-        rte_ring_free(transport.ring);
+        if (transport.owns_ring)
+        {
+            rte_ring_free(transport.ring);
+        }
         transport.ring = nullptr;
+        transport.owns_ring = false;
     }
 
     if (transport.pool != nullptr)
     {
-        rte_mempool_free(transport.pool);
+        if (transport.owns_pool)
+        {
+            rte_mempool_free(transport.pool);
+        }
         transport.pool = nullptr;
+        transport.owns_pool = false;
     }
 }
 
@@ -157,6 +183,34 @@ inline void release_frame(MarketTransport& transport, dpdktrade::wire::MarketFra
 
     frame = static_cast<dpdktrade::wire::MarketFrame*>(object);
     return true;
+}
+#else
+[[nodiscard]] inline bool initialize_transport(MarketTransport&, const char*, const char*, unsigned = 4096U) noexcept
+{
+    return false;
+}
+
+inline void shutdown_transport(MarketTransport&) noexcept
+{
+}
+
+[[nodiscard]] inline dpdktrade::wire::MarketFrame* acquire_frame(MarketTransport&) noexcept
+{
+    return nullptr;
+}
+
+inline void release_frame(MarketTransport&, dpdktrade::wire::MarketFrame*) noexcept
+{
+}
+
+[[nodiscard]] inline bool push_frame(MarketTransport&, const dpdktrade::wire::MarketFrame&) noexcept
+{
+    return false;
+}
+
+[[nodiscard]] inline bool pop_frame(MarketTransport&, dpdktrade::wire::MarketFrame*&) noexcept
+{
+    return false;
 }
 #endif
 } // namespace tickforge::dpdk

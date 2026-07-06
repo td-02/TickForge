@@ -10,6 +10,7 @@ include(CTest)
 
 option(DPDKTRADE_ENABLE_WARNINGS "Enable a strong warning set for DPDKTrade targets" ON)
 option(DPDKTRADE_ENABLE_DPDK "Enable DPDK detection for transport-oriented apps" ON)
+option(TICKFORGE_WITH_DPDK "Build the DPDK ring transport apps" ON)
 
 set(DPDKTRADE_DPDK_ENABLED OFF)
 if (DPDKTRADE_ENABLE_DPDK)
@@ -70,3 +71,11 @@ endif()
 
 add_executable(dpdktrade_stress apps/stress.cpp)
 target_link_libraries(dpdktrade_stress PRIVATE dpdktrade::core)
+
+if (TICKFORGE_WITH_DPDK)
+    add_executable(dpdk_engine apps/dpdk_engine.cpp)
+    target_link_libraries(dpdk_engine PRIVATE dpdktrade::core)
+
+    add_executable(dpdk_generator apps/dpdk_generator.cpp)
+    target_link_libraries(dpdk_generator PRIVATE dpdktrade::core)
+endif()
