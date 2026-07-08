@@ -67,6 +67,18 @@ if (BUILD_TESTING)
     add_executable(dpdktrade_tests tests/test_sanity.cpp)
     target_link_libraries(dpdktrade_tests PRIVATE dpdktrade::core)
     add_test(NAME dpdktrade.tests COMMAND $<TARGET_FILE:dpdktrade_tests>)
+
+    add_executable(dpdktrade_test_book tests/test_book.cpp)
+    target_link_libraries(dpdktrade_test_book PRIVATE dpdktrade::core)
+    add_test(NAME dpdktrade.test_book COMMAND $<TARGET_FILE:dpdktrade_test_book>)
+
+    add_executable(dpdktrade_test_dpdk_ring tests/test_dpdk_ring.cpp)
+    target_link_libraries(dpdktrade_test_dpdk_ring PRIVATE dpdktrade::core)
+    add_test(NAME dpdktrade.test_dpdk_ring COMMAND $<TARGET_FILE:dpdktrade_test_dpdk_ring>)
+
+    add_executable(dpdktrade_test_strategy tests/test_strategy.cpp)
+    target_link_libraries(dpdktrade_test_strategy PRIVATE dpdktrade::core)
+    add_test(NAME dpdktrade.test_strategy COMMAND $<TARGET_FILE:dpdktrade_test_strategy>)
 endif()
 
 add_executable(dpdktrade_stress apps/stress.cpp)
