@@ -14,6 +14,7 @@ int main()
 
     static_assert(sizeof(wire::MarketFrame) == 62);
     static_assert(sizeof(wire::OrderFrame) == 62);
+    static_assert(sizeof(book::OrderBook::Level) == 16);
 
     wire::MarketFrame market_frame{};
     market_frame.ethertype = wire::ETHERTYPE_MARKET;
@@ -49,6 +50,40 @@ int main()
     assert(order_book.best_ask().quantity == 60U);
     assert(order_book.bid_pressure() == 120U);
     assert(order_book.ask_pressure() == 140U);
+
+    book::OrderBook sorted_book{};
+    sorted_book.apply(book::OrderBook::Side::Bid, 100U, 10U);
+    sorted_book.apply(book::OrderBook::Side::Bid, 105U, 20U);
+    sorted_book.apply(book::OrderBook::Side::Bid, 103U, 30U);
+    sorted_book.apply(book::OrderBook::Side::Ask, 120U, 11U);
+    sorted_book.apply(book::OrderBook::Side::Ask, 115U, 21U);
+    sorted_book.apply(book::OrderBook::Side::Ask, 118U, 31U);
+
+    assert(sorted_book.best_bid().price == 105U);
+    assert(sorted_book.best_bid().quantity == 20U);
+    assert(sorted_book.best_ask().price == 115U);
+    assert(sorted_book.best_ask().quantity == 21U);
+
+    book::OrderBook empty_book{};
+    assert(empty_book.best_bid().price == 0U);
+    assert(empty_book.best_bid().quantity == 0U);
+    assert(empty_book.best_ask().price == 0U);
+    assert(empty_book.best_ask().quantity == 0U);
+
+    book::OrderBook capped_book{};
+    for (std::uint64_t index = 0; index < book::OrderBook::depth; ++index)
+    {
+        capped_book.apply(book::OrderBook::Side::Bid, 100U + index, 1U + index);
+    }
+    capped_book.apply(book::OrderBook::Side::Bid, 999U, 77U);
+    assert(capped_book.best_bid().price == 999U);
+    assert(capped_book.best_bid().quantity == 77U);
+    assert(capped_book.bid_pressure() == 131U);
+
+    capped_book.apply(book::OrderBook::Side::Bid, 999U, 0U);
+    assert(capped_book.best_bid().price == 109U);
+    assert(capped_book.best_bid().quantity == 10U);
+    assert(capped_book.bid_pressure() == 54U);
 
     book::OrderBook buy_book{};
     buy_book.apply(book::OrderBook::Side::Bid, 100U, 220U);

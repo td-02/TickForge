@@ -16,6 +16,7 @@ public:
         std::uint64_t price = 0;
         std::uint64_t quantity = 0;
     };
+    static_assert(sizeof(Level) == 16, "Level should remain a compact pair of uint64_t values");
 
     enum class Side : std::uint8_t
     {
@@ -30,21 +31,13 @@ public:
     // avoids any hidden allocation or map lookup cost.
     constexpr void apply(Side side, std::uint64_t price, std::uint64_t quantity) noexcept
     {
-        auto& levels = (side == Side::Bid) ? bid_levels_ : ask_levels_;
-
-        for (std::size_t index = 0; index < depth; ++index)
+        if (side == Side::Bid)
         {
-            if (levels[index].price == price || levels[index].quantity == 0)
-            {
-                levels[index].price = price;
-                levels[index].quantity = quantity;
-                return;
-            }
+            apply_side<true>(price, quantity);
+            return;
         }
 
-        // When the side is full, replace the last slot deterministically.
-        levels[depth - 1].price = price;
-        levels[depth - 1].quantity = quantity;
+        apply_side<false>(price, quantity);
     }
 
     [[nodiscard]] constexpr std::uint64_t bid_pressure() const noexcept
@@ -59,17 +52,19 @@ public:
 
     [[nodiscard]] constexpr Level best_bid() const noexcept
     {
-        return best_level(bid_levels_, true);
+        return bid_count_ == 0 ? Level{} : bid_levels_[0];
     }
 
     [[nodiscard]] constexpr Level best_ask() const noexcept
     {
-        return best_level(ask_levels_, false);
+        return ask_count_ == 0 ? Level{} : ask_levels_[0];
     }
 
 private:
-    std::array<Level, depth> bid_levels_{};
-    std::array<Level, depth> ask_levels_{};
+    alignas(64) std::array<Level, depth> bid_levels_{};
+    alignas(64) std::array<Level, depth> ask_levels_{};
+    std::size_t bid_count_ = 0;
+    std::size_t ask_count_ = 0;
 
     [[nodiscard]] static constexpr std::uint64_t side_pressure(const std::array<Level, depth>& levels) noexcept
     {
@@ -81,42 +76,111 @@ private:
         return total;
     }
 
-    [[nodiscard]] static constexpr Level best_level(const std::array<Level, depth>& levels, bool highest_price) noexcept
+    template <bool IsBid>
+    constexpr void apply_side(std::uint64_t price, std::uint64_t quantity) noexcept
     {
-        Level best{};
-        bool found = false;
+        auto& levels = IsBid ? bid_levels_ : ask_levels_;
+        std::size_t& count = IsBid ? bid_count_ : ask_count_;
 
-        for (const auto& level : levels)
+        for (std::size_t index = 0; index < count; ++index)
         {
-            if (level.quantity == 0)
+            if (levels[index].price != price)
             {
                 continue;
             }
 
-            if (!found)
+            if (quantity == 0)
             {
-                best = level;
-                found = true;
-                continue;
-            }
-
-            if (highest_price)
-            {
-                if (level.price > best.price)
+                for (std::size_t current = index; current + 1 < count; ++current)
                 {
-                    best = level;
+                    levels[current] = levels[current + 1];
+                }
+                levels[count - 1] = Level{};
+                --count;
+                return;
+            }
+
+            levels[index].quantity = quantity;
+            return;
+        }
+
+        if (quantity == 0)
+        {
+            return;
+        }
+
+        if (count < depth)
+        {
+            std::size_t insert_at = count;
+            for (std::size_t index = 0; index < count; ++index)
+            {
+                if constexpr (IsBid)
+                {
+                    if (price > levels[index].price)
+                    {
+                        insert_at = index;
+                        break;
+                    }
+                }
+                else
+                {
+                    if (price < levels[index].price)
+                    {
+                        insert_at = index;
+                        break;
+                    }
+                }
+            }
+
+            for (std::size_t current = count; current > insert_at; --current)
+            {
+                levels[current] = levels[current - 1];
+            }
+
+            levels[insert_at] = Level{price, quantity};
+            ++count;
+            return;
+        }
+
+        std::size_t insert_at = depth;
+        for (std::size_t index = 0; index < depth; ++index)
+        {
+            if constexpr (IsBid)
+            {
+                if (price > levels[index].price)
+                {
+                    insert_at = index;
+                    break;
                 }
             }
             else
             {
-                if (level.price < best.price)
+                if (price < levels[index].price)
                 {
-                    best = level;
+                    insert_at = index;
+                    break;
                 }
             }
         }
 
-        return best;
+        if (insert_at == depth)
+        {
+            levels[depth - 1] = Level{price, quantity};
+            return;
+        }
+
+        for (std::size_t current = depth - 1; current > insert_at; --current)
+        {
+            levels[current] = levels[current - 1];
+        }
+
+        if constexpr (IsBid)
+        {
+            levels[insert_at] = Level{price, quantity};
+            return;
+        }
+
+        levels[insert_at] = Level{price, quantity};
     }
 };
 } // namespace dpdktrade::book

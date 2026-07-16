@@ -67,10 +67,17 @@ if (BUILD_TESTING)
     add_executable(dpdktrade_tests tests/test_sanity.cpp)
     target_link_libraries(dpdktrade_tests PRIVATE dpdktrade::core)
     add_test(NAME dpdktrade.tests COMMAND $<TARGET_FILE:dpdktrade_tests>)
+
+    add_executable(dpdktrade_test_book tests/test_book.cpp)
+    target_link_libraries(dpdktrade_test_book PRIVATE dpdktrade::core)
+    add_test(NAME dpdktrade.test_book COMMAND $<TARGET_FILE:dpdktrade_test_book>)
 endif()
 
 add_executable(dpdktrade_stress apps/stress.cpp)
 target_link_libraries(dpdktrade_stress PRIVATE dpdktrade::core)
+
+add_executable(ring_benchmark apps/ring_benchmark.cpp)
+target_link_libraries(ring_benchmark PRIVATE dpdktrade::core)
 
 if (TICKFORGE_WITH_DPDK)
     add_executable(dpdk_engine apps/dpdk_engine.cpp)
