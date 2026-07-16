@@ -1,0 +1,7 @@
+perf stat baseline unavailable in this environment.
+
+Expected command:
+  perf stat -e cache-references,cache-misses,branch-misses,instructions,cycles \
+    --repeat 3 ./build-prof/ring_benchmark
+
+Use this file to store the captured baseline output once perf is available.

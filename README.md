@@ -24,6 +24,8 @@ The repository currently contains the first-pass architecture skeleton and the e
 - `tests/test_book.cpp` exercises the core foundation path.
 - `apps/ring_scenarios.cpp` validates the ring-oriented scenarios.
 - `apps/ring_benchmark.cpp` provides a DPDK ring benchmark scaffold.
+- `scripts/profile.sh` captures perf-based profiling for the ring benchmark or the AF_PACKET-vs-DPDK benchmark.
+- `results/profile_baseline.txt` stores the baseline `perf stat` output for the ring benchmark.
 - `apps/afpacket_engine.cpp` and `apps/afpacket_generator.cpp` scaffold AF_PACKET transport work.
 - `apps/stress.cpp` runs a long-form engine, ring, and AF_PACKET stress pass.
 
@@ -68,6 +70,16 @@ build/dpdktrade_stress
 ```
 
 For DPDK-oriented apps, build and run only on a system with the DPDK headers and runtime available.
+
+## Profiling
+
+Use `scripts/profile.sh` on Linux with `perf` installed to build a profiling-friendly binary and capture baseline counters for the ring benchmark.
+
+```bash
+bash scripts/profile.sh ring_benchmark
+```
+
+The script writes the captured `perf stat` output to `results/profile_baseline.txt`. If `perf` is unavailable, it records the expected command in that file so the workflow is still documented.
 
 ## Design Notes
 
