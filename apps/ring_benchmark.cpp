@@ -1,5 +1,5 @@
-#include <algorithm>
 #include <cstdint>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -26,19 +26,19 @@ struct BenchmarkStats final
     double throughput_mpps = 0.0;
 };
 
-[[nodiscard]] BenchmarkStats compute_stats(std::vector<std::uint64_t> samples, double elapsed_seconds) noexcept
+[[nodiscard]] std::uint64_t percentile(std::vector<std::uint64_t>& samples, double ratio) noexcept
 {
-    std::sort(samples.begin(), samples.end());
+    const std::size_t index = static_cast<std::size_t>(ratio * static_cast<double>(samples.size() - 1));
+    std::nth_element(samples.begin(), samples.begin() + index, samples.end());
+    return samples[index];
+}
 
-    const auto percentile = [&samples](double ratio) -> std::uint64_t {
-        const std::size_t index = static_cast<std::size_t>(ratio * static_cast<double>(samples.size() - 1));
-        return samples[index];
-    };
-
+[[nodiscard]] BenchmarkStats compute_stats(std::vector<std::uint64_t>& samples, double elapsed_seconds) noexcept
+{
     BenchmarkStats stats{};
-    stats.p50 = percentile(0.50);
-    stats.p95 = percentile(0.95);
-    stats.p99 = percentile(0.99);
+    stats.p50 = percentile(samples, 0.50);
+    stats.p95 = percentile(samples, 0.95);
+    stats.p99 = percentile(samples, 0.99);
     stats.throughput_mpps = (samples.size() / elapsed_seconds) / 1'000'000.0;
     return stats;
 }
@@ -95,7 +95,7 @@ int main()
     const double cycles_per_second = static_cast<double>(rte_get_tsc_hz());
     const double elapsed_seconds = elapsed_cycles / cycles_per_second;
 
-    const BenchmarkStats stats = compute_stats(std::move(samples), elapsed_seconds);
+    const BenchmarkStats stats = compute_stats(samples, elapsed_seconds);
 
     if (!write_results(stats))
     {
