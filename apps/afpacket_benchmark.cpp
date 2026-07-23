@@ -47,19 +47,19 @@ struct BenchmarkResult final
     return frame;
 }
 
+[[nodiscard]] std::uint64_t percentile(std::vector<std::uint64_t>& samples, double fraction) noexcept
+{
+    const std::size_t index = static_cast<std::size_t>(fraction * static_cast<double>(samples.size() - 1U));
+    std::nth_element(samples.begin(), samples.begin() + index, samples.end());
+    return samples[index];
+}
+
 [[nodiscard]] BenchmarkResult compute_result(std::vector<std::uint64_t>& samples, double elapsed_seconds) noexcept
 {
-    std::sort(samples.begin(), samples.end());
-
-    const auto percentile = [&samples](double fraction) -> std::uint64_t {
-        const std::size_t index = static_cast<std::size_t>(fraction * static_cast<double>(samples.size() - 1U));
-        return samples[index];
-    };
-
     BenchmarkResult result{};
-    result.p50_cycles = percentile(0.50);
-    result.p95_cycles = percentile(0.95);
-    result.p99_cycles = percentile(0.99);
+    result.p50_cycles = percentile(samples, 0.50);
+    result.p95_cycles = percentile(samples, 0.95);
+    result.p99_cycles = percentile(samples, 0.99);
     result.throughput_mpps = (static_cast<double>(samples.size()) / elapsed_seconds) / 1'000'000.0;
     return result;
 }
