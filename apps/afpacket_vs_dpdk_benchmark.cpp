@@ -92,31 +92,32 @@ struct LocalQueue final
     };
 }
 
-[[nodiscard]] LatencyStats compute_stats(std::vector<std::uint64_t> samples) noexcept
+[[nodiscard]] std::uint64_t percentile(std::vector<std::uint64_t>& samples, double ratio) noexcept
+{
+    const std::size_t index = static_cast<std::size_t>(ratio * static_cast<double>(samples.size() - 1U));
+    std::nth_element(samples.begin(), samples.begin() + index, samples.end());
+    return samples[index];
+}
+
+[[nodiscard]] LatencyStats compute_stats(std::vector<std::uint64_t>& samples) noexcept
 {
     if (samples.empty())
     {
         return {};
     }
 
-    std::sort(samples.begin(), samples.end());
-
-    const auto percentile = [&samples](double ratio) -> std::uint64_t {
-        const std::size_t index = static_cast<std::size_t>(ratio * static_cast<double>(samples.size() - 1U));
-        return samples[index];
-    };
-
-    const std::uint64_t min = samples.front();
-    const std::uint64_t max = samples.back();
+    const auto [min_it, max_it] = std::minmax_element(samples.begin(), samples.end());
+    const std::uint64_t min = *min_it;
+    const std::uint64_t max = *max_it;
     const std::uint64_t mean = static_cast<std::uint64_t>(
         std::accumulate(samples.begin(), samples.end(), std::uint64_t{0}) / static_cast<std::uint64_t>(samples.size()));
 
     return LatencyStats{
         .min = min,
         .mean = mean,
-        .p50 = percentile(0.50),
-        .p95 = percentile(0.95),
-        .p99 = percentile(0.99),
+        .p50 = percentile(samples, 0.50),
+        .p95 = percentile(samples, 0.95),
+        .p99 = percentile(samples, 0.99),
         .max = max,
     };
 }
@@ -158,6 +159,7 @@ struct LocalQueue final
 {
     dpdktrade::engine::DpdkTradeEngine engine{dpdktrade::book::OrderBook{}, dpdktrade::risk::RiskGuard{{1000, 100000U}}};
     LocalQueue queue{};
+    constexpr std::size_t pattern_mask = make_load_pattern().size() - 1U;
     const auto pattern = make_load_pattern();
     std::vector<std::uint64_t> samples;
     samples.reserve(event_count);
@@ -165,7 +167,7 @@ struct LocalQueue final
     for (std::size_t index = 0; index < event_count; ++index)
     {
         const auto start = std::chrono::steady_clock::now();
-        const dpdktrade::wire::MarketFrame& frame = pattern[index % pattern.size()];
+        const dpdktrade::wire::MarketFrame& frame = pattern[index & pattern_mask];
         if (!queue.push(frame))
         {
             break;
@@ -183,7 +185,7 @@ struct LocalQueue final
             std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count()));
     }
 
-    return compute_stats(std::move(samples));
+    return compute_stats(samples);
 }
 
 #if TICKFORGE_WITH_DPDK_HEADERS
@@ -196,6 +198,7 @@ struct LocalQueue final
     }
 
     dpdktrade::engine::DpdkTradeEngine engine{dpdktrade::book::OrderBook{}, dpdktrade::risk::RiskGuard{{1000, 100000U}}};
+    constexpr std::size_t pattern_mask = make_load_pattern().size() - 1U;
     const auto pattern = make_load_pattern();
     std::vector<std::uint64_t> samples;
     samples.reserve(event_count);
@@ -203,7 +206,7 @@ struct LocalQueue final
     for (std::size_t index = 0; index < event_count; ++index)
     {
         const auto start = std::chrono::steady_clock::now();
-        const dpdktrade::wire::MarketFrame& frame = pattern[index % pattern.size()];
+        const dpdktrade::wire::MarketFrame& frame = pattern[index & pattern_mask];
         if (!tickforge::dpdk::push_frame(transport, frame))
         {
             tickforge::dpdk::shutdown_transport(transport);
@@ -225,7 +228,7 @@ struct LocalQueue final
     }
 
     tickforge::dpdk::shutdown_transport(transport);
-    return compute_stats(std::move(samples));
+    return compute_stats(samples);
 }
 #else
 [[nodiscard]] std::optional<LatencyStats> run_dpdk_path() noexcept
