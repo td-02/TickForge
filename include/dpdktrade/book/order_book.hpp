@@ -42,12 +42,12 @@ public:
 
     [[nodiscard]] constexpr std::uint64_t bid_pressure() const noexcept
     {
-        return side_pressure(bid_levels_);
+        return bid_pressure_;
     }
 
     [[nodiscard]] constexpr std::uint64_t ask_pressure() const noexcept
     {
-        return side_pressure(ask_levels_);
+        return ask_pressure_;
     }
 
     [[nodiscard]] constexpr Level best_bid() const noexcept
@@ -65,22 +65,15 @@ private:
     alignas(64) std::array<Level, depth> ask_levels_{};
     std::size_t bid_count_ = 0;
     std::size_t ask_count_ = 0;
-
-    [[nodiscard]] static constexpr std::uint64_t side_pressure(const std::array<Level, depth>& levels) noexcept
-    {
-        std::uint64_t total = 0;
-        for (const auto& level : levels)
-        {
-            total += level.quantity;
-        }
-        return total;
-    }
+    std::uint64_t bid_pressure_ = 0;
+    std::uint64_t ask_pressure_ = 0;
 
     template <bool IsBid>
     constexpr void apply_side(std::uint64_t price, std::uint64_t quantity) noexcept
     {
         auto& levels = IsBid ? bid_levels_ : ask_levels_;
         std::size_t& count = IsBid ? bid_count_ : ask_count_;
+        std::uint64_t& pressure = IsBid ? bid_pressure_ : ask_pressure_;
 
         for (std::size_t index = 0; index < count; ++index)
         {
@@ -91,6 +84,7 @@ private:
 
             if (quantity == 0)
             {
+                pressure -= levels[index].quantity;
                 for (std::size_t current = index; current + 1 < count; ++current)
                 {
                     levels[current] = levels[current + 1];
@@ -100,6 +94,7 @@ private:
                 return;
             }
 
+            pressure += quantity - levels[index].quantity;
             levels[index].quantity = quantity;
             return;
         }
@@ -122,13 +117,10 @@ private:
                         break;
                     }
                 }
-                else
+                else if (price < levels[index].price)
                 {
-                    if (price < levels[index].price)
-                    {
-                        insert_at = index;
-                        break;
-                    }
+                    insert_at = index;
+                    break;
                 }
             }
 
@@ -138,10 +130,12 @@ private:
             }
 
             levels[insert_at] = Level{price, quantity};
+            pressure += quantity;
             ++count;
             return;
         }
 
+        pressure -= levels[depth - 1].quantity;
         std::size_t insert_at = depth;
         for (std::size_t index = 0; index < depth; ++index)
         {
@@ -165,6 +159,7 @@ private:
 
         if (insert_at == depth)
         {
+            pressure += quantity;
             levels[depth - 1] = Level{price, quantity};
             return;
         }
@@ -177,10 +172,12 @@ private:
         if constexpr (IsBid)
         {
             levels[insert_at] = Level{price, quantity};
+            pressure += quantity;
             return;
         }
 
         levels[insert_at] = Level{price, quantity};
+        pressure += quantity;
     }
 };
 } // namespace dpdktrade::book
