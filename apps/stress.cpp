@@ -57,7 +57,8 @@ namespace
     std::size_t outputs = 0;
     for (std::size_t index = 0; index < iterations; ++index)
     {
-        const auto& frame = frames[index % frames.size()];
+        // The frame set is a power-of-two ring, so a bitmask is cheaper than modulo here.
+        const auto& frame = frames[index & (frames.size() - 1U)];
         if (engine.on_market(frame).has_value())
         {
             ++outputs;
