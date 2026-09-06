@@ -75,6 +75,9 @@ endif()
 
 add_executable(dpdktrade_stress apps/stress.cpp)
 target_link_libraries(dpdktrade_stress PRIVATE dpdktrade::core)
+if (BUILD_TESTING)
+    add_test(NAME dpdktrade.stress.smoke COMMAND dpdktrade_stress --iterations 4096)
+endif()
 
 add_executable(ring_benchmark apps/ring_benchmark.cpp)
 target_link_libraries(ring_benchmark PRIVATE dpdktrade::core)

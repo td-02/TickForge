@@ -1,7 +1,10 @@
 #include <array>
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <string_view>
+#include <system_error>
 
 #include <dpdktrade/book/order_book.hpp>
 #include <dpdktrade/engine/dpdktrade_engine.hpp>
@@ -24,6 +27,14 @@
 
 namespace
 {
+inline constexpr std::size_t default_iterations = 1'000'000;
+
+struct StressConfig final
+{
+    std::size_t iterations = default_iterations;
+    bool show_help = false;
+};
+
 [[nodiscard]] constexpr dpdktrade::wire::MarketFrame make_market_frame(std::uint8_t side, std::uint64_t price, std::uint64_t quantity) noexcept
 {
     dpdktrade::wire::MarketFrame frame{};
@@ -68,6 +79,72 @@ namespace
     const auto& stats = engine.stats();
     const std::size_t expected_invalid = iterations / frames.size();
     return stats.total == iterations && stats.invalid == expected_invalid && outputs > 0U;
+}
+
+[[nodiscard]] bool parse_iterations(std::string_view value, std::size_t& iterations) noexcept
+{
+    std::size_t parsed = 0;
+    const char* const first = value.data();
+    const char* const last = first + value.size();
+    const auto [ptr, error] = std::from_chars(first, last, parsed);
+    if (error != std::errc{} || ptr != last || parsed == 0U)
+    {
+        return false;
+    }
+
+    iterations = parsed;
+    return true;
+}
+
+[[nodiscard]] bool parse_args(int argc, char** argv, StressConfig& config) noexcept
+{
+    for (int index = 1; index < argc; ++index)
+    {
+        const std::string_view arg{argv[index]};
+        if (arg == "--help" || arg == "-h")
+        {
+            config.show_help = true;
+            return true;
+        }
+
+        if (arg == "--iterations" || arg == "-n")
+        {
+            if (index + 1 >= argc)
+            {
+                return false;
+            }
+
+            ++index;
+            if (!parse_iterations(argv[index], config.iterations))
+            {
+                return false;
+            }
+            continue;
+        }
+
+        constexpr std::string_view iterations_prefix = "--iterations=";
+        if (arg.starts_with(iterations_prefix))
+        {
+            if (!parse_iterations(arg.substr(iterations_prefix.size()), config.iterations))
+            {
+                return false;
+            }
+            continue;
+        }
+
+        return false;
+    }
+
+    return true;
+}
+
+void print_usage(std::ostream& out) noexcept
+{
+    out << "Usage: dpdktrade_stress [--iterations N]\n"
+        << "       dpdktrade_stress [-n N]\n"
+        << "\n"
+        << "Runs engine, ring, and AF_PACKET stress checks when their dependencies are available.\n"
+        << "Default iterations: " << default_iterations << "\n";
 }
 
 #if DPDKTRADE_HAS_DPDK
@@ -134,10 +211,21 @@ namespace
 
 int main(int argc, char** argv)
 {
-    (void)argc;
-    (void)argv;
+    StressConfig config{};
+    if (!parse_args(argc, argv, config))
+    {
+        print_usage(std::cerr);
+        return 2;
+    }
 
-    constexpr std::size_t iterations = 1'000'000;
+    if (config.show_help)
+    {
+        print_usage(std::cout);
+        return 0;
+    }
+
+    const std::size_t iterations = config.iterations;
+    std::cout << "iterations: " << iterations << '\n';
 
     const bool engine_ok = run_engine_stress(iterations);
     std::cout << "engine_stress: " << (engine_ok ? "PASS" : "FAIL") << '\n';
