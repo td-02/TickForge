@@ -57,6 +57,7 @@ The repository currently contains the first-pass architecture skeleton and the e
 - `ring_scenarios.cpp` checks the core engine behaviors across BUY, SELL, NO_SIGNAL, RISK_REJECT, and INVALID_FRAME paths.
 - `ring_benchmark.cpp` measures a million ring events and exports benchmark results to `results/ring_benchmark.csv`.
 - `afpacket_engine.cpp` and `afpacket_generator.cpp` establish the AF_PACKET transport scaffold for later DPDK integration.
+- `stress.cpp` runs configurable engine, ring, and AF_PACKET stress checks; use `--iterations N` or `-n N` to tune runtime.
 
 ## Build
 
@@ -67,6 +68,7 @@ cmake -S . -B build -G Ninja
 cmake --build build
 ctest --test-dir build
 build/dpdktrade_stress
+build/dpdktrade_stress --iterations 100000
 ```
 
 For DPDK-oriented apps, build and run only on a system with the DPDK headers and runtime available.
